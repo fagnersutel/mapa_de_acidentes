@@ -88,8 +88,8 @@ dim(dados)
 #write.table(dados,file=data,sep=";",dec = " ", row.names=FALSE)
 #dados <- dados[dados$LATITUDE >  -30.039011  & dados$LONGITUDE > -51.225784, ]
 dim(dados)
-#dados <- dados[dados$TIPO_ACID == "ATROPELAMENTO", ]
-dim(dados)
+dados4 <- dados[dados$TIPO_ACID == "ATROPELAMENTO", ]
+dim(dados4)
 dados <- as.data.frame(dados)
 dados$LONGITUDE <- as.numeric(as.character(dados$LONGITUDE))
 #dados$LONGITUDE <- as.numeric(gsub(".", "", dados$LONGITUDE, fixed = TRUE));  dados$LONGITUDE * 1e-13
@@ -108,7 +108,7 @@ dim(dados2)
 dados3 <- dados[dados$FATAIS > 0, ]
 dim(dados3)
 
-leaflet(dados1) %>%
+leaflet(dados) %>%
   addTiles(group="OSM") %>%
   addCircles(~LONGITUDE, ~LATITUDE, popup=~paste("ID: ", ID,  "Local: ", LOCAL,   "<br>Ano: ", ANO, 
                                                  "<br>Tipo: ", TIPO_ACID, "<BR>N Feridos: ", FERIDOS, "<BR>N Feridos GRAVES: ", 
@@ -127,12 +127,111 @@ leaflet(dados1) %>%
 
 leaflet(dados2) %>%
   addTiles(group="OSM") %>%
-  addHeatmap(group="heat", lng=dados2$LONGITUDE, lat=dados2$LATITUDE, max=.5, blur = 45) %>%
+  addHeatmap(group=NULL, lng=dados2$LONGITUDE, lat=dados2$LATITUDE, radius = 30 , max=10, blur = 10) %>%
   addCircles(~LONGITUDE, ~LATITUDE, popup=~paste("ID: ", ID,  "Local: ", LOCAL,   "<br>Ano: ", ANO, 
     "<br>Tipo: ", TIPO_ACID, "<BR>N Feridos: ", FERIDOS, "<BR>N Feridos GRAVES: ", 
     FERIDOS_GR, "<br>Fatais", FATAIS, "<br>Local: ", LOCAL_VIA, "<br>Lat: ", LATITUDE, "<br>Long: ", LONGITUDE, sep = " "),  
     weight = 1, radius=10, color="red", stroke = TRUE, fillOpacity = 0.8) %>% 
   addLegend("topleft", colors= "#ffa500", labels=paste(min(dados2$ANO), "-", max(dados2$ANO), "<br>Total de Acidentes:", length(dados$ANO),   "<br>Com Feridos, Graves e Fatais:", length(dados2$ANO), sep = " "), title="Acidentes com Vítmas:")
+
+leaflet(dados2) %>%
+  addTiles(group="OSM") %>%
+  addCircles(~LONGITUDE, ~LATITUDE, popup=~paste("ID: ", ID,  "Local: ", LOCAL,   "<br>Ano: ", ANO, 
+                                                 "<br>Tipo: ", TIPO_ACID, "<BR>N Feridos: ", FERIDOS, "<BR>N Feridos GRAVES: ", 
+                                                 FERIDOS_GR, "<br>Fatais", FATAIS, "<br>Local: ", LOCAL_VIA, "<br>Lat: ", LATITUDE, "<br>Long: ", LONGITUDE, sep = " "),  
+             weight = 1, radius=10, color="red", stroke = TRUE, fillOpacity = 0.8) %>% 
+  addLegend("topleft", colors= "#ffa500", labels=paste(min(dados2$ANO), "-", max(dados2$ANO), "<br>Total de Acidentes:", length(dados$ANO),   "<br>Com Feridos, Graves e Fatais:", length(dados2$ANO), sep = " "), title="Acidentes com Vítmas:")
+
+
+leaflet(dados2) %>%
+  addTiles(group="OSM") %>%
+  addHeatmap(group=NULL, lng=dados2$LONGITUDE, lat=dados2$LATITUDE, radius = 30 , max=8, blur = 10) %>%
+  addLegend("topleft", colors= "#ffa500", labels=paste(min(dados2$ANO), "-", max(dados2$ANO), "<br>Total de Acidentes:", length(dados$ANO),   "<br>Com Feridos, Graves e Fatais:", length(dados2$ANO), sep = " "), title="Acidentes com Vítmas:")
+
+#MAPA BASE
+mh_map_set_dois = get_googlemap(center = c(-51.229956979237386, -30.030948), 
+                                zoom = 15, source="osm",
+                                color = "color",
+                                source = "google",
+                                maptype = "roadmap")
+#mAPA DE vITIMAS
+ggmap(mh_map_set_dois) + 
+  stat_density2d(aes(x = LONGITUDE, y = LATITUDE,  
+                     fill = ..level..,alpha=..level..), bins = 5, 
+                 geom = "polygon", data = dados2) +
+  scale_alpha(guide="none") + 
+  scale_fill_gradient(low = "#e3fc00", high = "#e3a500", guide="none")+
+  ggtitle("Mapa de Vitimas")
+
+  #MAPA DE ATROPELAMENTOS
+ggmap(mh_map_set_dois) + 
+  stat_density2d(aes(x = LONGITUDE, y = LATITUDE,  
+                     fill = ..level..,alpha=..level..), bins = 5, 
+                 geom = "polygon", data = dados4) +
+  scale_alpha(guide="none") + 
+  scale_fill_gradient(low = "#fb0010", high = "#c00010", guide="none")+
+  ggtitle("Mapa de Atropelamentos")+
+  guides(fill=FALSE, alpha=FALSE, size=FALSE)
+
+
+#MAPA DE ACIDENTES
+ggmap(mh_map_set_dois) + 
+  stat_density2d(aes(x = LONGITUDE, y = LATITUDE,  
+                     fill = ..level..,alpha=..level..), bins = 6, 
+                 geom = "polygon", data = dados2) +
+  scale_alpha(guide="none") + 
+  scale_fill_gradient(low = "#132B43", high = "blue", guide="none")+
+  ggtitle("Mapa de Acidentes")
+
+#MAPA DE VÍTIMAS
+ggmap(mh_map_set_dois) + 
+  stat_density2d(aes(x = LONGITUDE, y = LATITUDE,  
+                     fill = ..level..,alpha=.5), bins = 7, 
+                 geom = "polygon", data = dados2) +
+  scale_alpha(guide="none") +
+  scale_fill_gradient(low = "pink", high = "red", guide="none")+
+  ggtitle("Mapa de Vitimas")
+
+#MAPA DE ACIDENtES
+ggmap(mh_map_set_dois) + 
+  stat_density2d(aes(x = LONGITUDE, y = LATITUDE,  
+                     alpha=..level..), bins = 9, 
+                 geom = "polygon", data = dados) +
+  scale_alpha(guide="none") +
+  scale_fill_gradient(low = "#3ac4f9", high = "#3a40f9", guide="none")+
+  ggtitle("Mapa de Acidentes")
+
+
+
+#MAPA DE ACIDENtES
+ggmap(mh_map_set_dois) + 
+  stat_density2d(aes(x = LONGITUDE, y = LATITUDE,  
+                     fill = ..level..,alpha=..level..), bins = 9, 
+                 geom = "polygon", data = dados) +
+  scale_alpha(guide="none") +
+  scale_fill_gradient(low = "#3ac4f9", high = "#3a40f9", guide="none") +
+  ggtitle("Mapa de Acidentes")
+
+
+ggmap(mh_map_set_dois) + 
+  stat_density2d(aes(x = LONGITUDE, y = LATITUDE,  
+                     alpha=..level..), bins = 9, 
+                 geom = "polygon", data = dados4) +
+  scale_alpha(guide="none") +
+  scale_fill_gradient(low = "pink", high = "red", guide="none")+
+  ggtitle("Map")
+
+
+# https://www.earthdatascience.org/tutorials/visualize-2d-point-density-ggmap/
+ggmap(mh_map_set_dois) + 
+  stat_density2d(aes(fill = ..level..), alpha = .5, 
+                 h = .02, n = 300,
+                 geom = "polygon", data = dados2) + 
+  scale_fill_viridis() + 
+  theme(legend.position = 'none')
+
+#https://stackoverflow.com/questions/50551085/plotting-points-on-a-map-with-colors-depending-on-their-value-using-coordinates
+ggmap(mh_map_set_dois) + geom_point(data = dados , aes(x=LATITUDE, y=LONGITUDE, color= TIPO_ACID, size = .5))
 
 
 leaflet(dados2) %>%
@@ -155,6 +254,14 @@ leaflet(dados3) %>%
                                                  FERIDOS_GR, "<br>Fatais", FATAIS, "<br>Local: ", LOCAL_VIA, sep = " "),  weight = 0.1, radius=50, color="red", stroke = TRUE, fillOpacity = 0.8) %>% 
   addLegend("topleft", colors= "#ffa500", labels=paste(min(dados3$ANO), "-", max(dados3$ANO), "<br>Acidentes:", length(dados$ANO),   "<br>Com Mortes:", length(dados3$ANO), "<br>Mortes:", sum(dados3$FATAIS), sep = " "), title="Acidentes Fatais:")
   
+
+pal = colorNumeric(colorRamp(c('green', 'red')), polys_dat$density)
+
+leaflet() %>%
+  addProviderTiles("OpenStreetMap.BlackAndWhite",
+                   options = providerTileOptions(noWrap = TRUE,minZoom=9)) %>%
+  addPolygons(data=dados2,color= ~pal(density), stroke = FALSE) %>%
+  setMaxBounds(-0.715485, 51.252031, 0.514984, 51.745313) %>%
 
 pal <- colorNumeric(
   palette = c("red", "pink", "blue", "green"),
